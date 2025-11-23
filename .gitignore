@@ -3,3 +3,14 @@ __pycache__/
 *.pyc
 backend/__pycache__/
 .vscode/
+
+# --- Virtual environment ---
+.venv/
+venv/
+ENV/
+.env/
+
+
+# --- MacOS ---
+.DS_Store
+**/.DS_Store

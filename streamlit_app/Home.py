@@ -1,4 +1,5 @@
 import streamlit as st
+from components.theme_toggle import render_theme_toggle, render_animated_background
 
 st.set_page_config(
     page_title="Hybrid Fraud Detection",
@@ -6,8 +7,27 @@ st.set_page_config(
     page_icon="⚡"
 )
 
+# --------------------------------------------
+# Theme toggle + animated particles
+# --------------------------------------------
+render_theme_toggle()
+render_animated_background()
+
+# --------------------------------------------
+# PREMIUM GLOBAL CSS (corrected)
+# --------------------------------------------
 st.markdown("""
 <style>
+
+/* -----------------------------
+   PREMIUM FONTS
+----------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+
+/* -----------------------------
+   DESIGN TOKENS
+----------------------------- */
 :root {
   --bg: #0B0E14;
   --panel: rgba(255,255,255,0.06);
@@ -16,137 +36,357 @@ st.markdown("""
   --muted: #AAB0BC;
   --accent: #7C5CFF;
   --accent-2: #00E5FF;
-  --good: #2ECC71;
-  --warn: #F1C40F;
-  --bad:  #FF6B6B;
-  --radius: 18px;
+  --glow-1: rgba(124,92,255,0.55);
+  --glow-2: rgba(0,229,255,0.45);
+}
+.light-theme {
+  --bg: #F5F7FA;
+  --text: #101525;
+  --panel: rgba(0,0,0,0.06);
+  --panel-strong: rgba(0,0,0,0.10);
+  --muted: #4A5568;
+  --accent: #6C4BFF;
+  --accent-2: #00A7D6;
+  --glow-1: rgba(108,75,255,0.45);
+  --glow-2: rgba(0,167,214,0.40);
 }
 
 html, body, [class*="css"] {
-  background-color: var(--bg) !important;
+  background: var(--bg) !important;
   color: var(--text) !important;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
-.block-container { padding-top: 1.2rem; }
 
+/* Hide default UI but KEEP sidebar */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stDeployButton {display: none;}
+
+
+/* -----------------------------
+   AURA BACKGROUND
+----------------------------- */
+.aura {
+  position: fixed;
+  inset: -25%;
+  z-index: 0;
+  background:
+    radial-gradient(900px circle at 10% 5%, var(--glow-1), transparent 60%),
+    radial-gradient(900px circle at 95% 10%, var(--glow-2), transparent 60%),
+    radial-gradient(1200px circle at 50% 100%, rgba(255,255,255,0.1), transparent 70%);
+  animation: auraShift 16s ease-in-out infinite;
+  filter: blur(50px);
+  opacity: 0.95;
+  pointer-events: none;
+}
+@keyframes auraShift {
+  0% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-30px,25px) scale(1.05); }
+  100% { transform: translate(0,0) scale(1); }
+}
+
+
+/* -----------------------------
+   UFO DRONE
+----------------------------- */
+.fraud-drone-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.fraud-drone {
+  position: absolute;
+  font-size: 140px;
+  animation: droneFly 22s linear infinite;
+  filter:
+    drop-shadow(0 0 25px var(--accent-2))
+    drop-shadow(0 0 45px var(--accent));
+}
+
+/* rotating scanner ring */
+.fraud-drone::before {
+  content: "◯";
+  position: absolute;
+  top: -80px;
+  left: -30px;
+  font-size: 210px;
+  color: var(--accent-2);
+  opacity: 0.4;
+  animation: rotateRing 6s linear infinite;
+  filter: blur(1px);
+}
+
+/* scanning beam */
+.fraud-drone::after {
+  content: "";
+  position: absolute;
+  top: 110px;
+  left: 50px;
+  width: 70px;
+  height: 430px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0,229,255,0.85),
+    rgba(124,92,255,0.7),
+    transparent
+  );
+  opacity: 0.8;
+  filter: blur(3px);
+  mix-blend-mode: screen;
+  animation: beamPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes droneFly {
+  0%   { transform: translate(3vw, 7vh) rotate(6deg); }
+  25%  { transform: translate(80vw, 6vh) rotate(8deg); }
+  50%  { transform: translate(88vw, 40vh) rotate(-6deg); }
+  75%  { transform: translate(18vw, 32vh) rotate(-12deg); }
+  100% { transform: translate(3vw, 7vh) rotate(6deg); }
+}
+@keyframes rotateRing { to { transform: rotate(360deg); } }
+@keyframes beamPulse {
+  0%,100% { opacity: .4; height: 300px; }
+  50%     { opacity: 1; height: 440px; }
+}
+
+
+/* -----------------------------
+   FLOATING BITCOINS
+----------------------------- */
+.coin-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.coin {
+  position: absolute;
+  font-size: 44px;
+  color: gold;
+  opacity: 0.9;
+  animation: coinFloat 12s ease-in-out infinite;
+}
+@keyframes coinFloat {
+  0%,100% { transform: translateY(0) rotate(0); opacity: 0.5; }
+  50%     { transform: translateY(-45px) rotate(180deg); opacity: 1; }
+}
+.coin-1 { top: 18%; left: 9%; }
+.coin-2 { top: 32%; left: 70%; animation-duration: 14s; }
+.coin-3 { top: 75%; left: 16%; animation-duration: 15s; }
+.coin-4 { top: 64%; left: 85%; animation-duration: 13s; }
+.coin-5 { top: 12%; left: 48%; animation-duration: 11s; }
+
+
+/* -----------------------------
+   FLOATING UI MOTION
+----------------------------- */
+@keyframes floatSoft {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-8px); }
+}
+.float-ui { animation: floatSoft 6s ease-in-out infinite; }
+.delay1 { animation-delay: 1.2s; }
+.delay2 { animation-delay: 2.4s; }
+
+
+/* -----------------------------
+   HERO + CARDS
+----------------------------- */
 .hero {
-  background: radial-gradient(1200px circle at 0% -20%, rgba(124,92,255,0.35), transparent 50%),
-              radial-gradient(1000px circle at 100% -30%, rgba(0,229,255,0.25), transparent 45%),
-              linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: calc(var(--radius) + 6px);
-  padding: 1.6rem 1.8rem;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.55);
+  padding: 2rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 16px 60px rgba(0,0,0,0.6),
+    0 0 40px var(--glow-1);
 }
-
-.hero h1 { font-size: 2.0rem; margin-bottom: 0.2rem; }
-.hero p  { color: var(--muted); font-size: 1.02rem; line-height: 1.6; }
+.hero h1 {
+  font-family: "Orbitron";
+  font-weight: 700;
+}
+.hero p {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(3,1fr);
+  gap: 1.2rem;
+  margin-top: 1.3rem;
 }
-@media (max-width: 1100px){
-  .grid { grid-template-columns: 1fr; }
-}
-
 .card {
-  background: var(--panel);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: var(--radius);
-  padding: 1.1rem 1.2rem;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.45);
+  padding: 1.3rem;
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: .25s;
+}
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.6), 0 0 28px var(--glow-2);
+}
+.card h3 {
+  font-family: "Orbitron";
 }
 
-.card h3 { font-size: 1.15rem; margin-bottom: 0.4rem; }
-.card p { color: var(--muted); line-height: 1.55; }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(124,92,255,0.12);
-  border: 1px solid rgba(124,92,255,0.35);
-  font-size: 0.85rem;
+/* -----------------------------
+   SIDEBAR GLOW
+----------------------------- */
+[data-testid="stSidebar"] {
+  background: rgba(0,0,0,0.45) !important;
+  backdrop-filter: blur(14px);
+  border-right: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 40px var(--glow-1);
 }
 
-.footer { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
 
-hr {
-  border: none;
-  height: 1px;
+/* -----------------------------
+   REMOVE KEYB BUTTON — add arrow instead
+----------------------------- */
+[data-testid="stKeyboardButton"],
+button[title="Keyboard shortcuts"],
+span[title="Keyboard shortcuts"],
+.st-keyboard-shortcut,
+kbd {
+    display: none !important;
+}
+
+.custom-arrow-btn {
+  position: fixed;
+  top: 12px;
+  right: 18px;
+  z-index: 99999;
   background: rgba(255,255,255,0.08);
-  margin: 1.1rem 0;
+  padding: 10px 13px;
+  border-radius: 12px;
+  font-size: 22px;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  transition: .22s;
 }
+.custom-arrow-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px var(--glow-2);
+  background: rgba(124,92,255,0.25);
+}
+
+            /* ====== IMPROVED VISIBLE WATERMARK ====== */
+.watermark {
+  position: fixed;
+  bottom: 18px;
+  right: 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  opacity: 0.55; /* stronger */
+  color: var(--text);
+  z-index: 9999;
+  pointer-events: none;
+  text-shadow:
+      0 0 6px rgba(0,0,0,0.45),
+      0 0 14px rgba(0,0,0,0.35);   /* makes it readable on glow */
+}
+
+/* Light mode tweak */
+.light-theme .watermark {
+  opacity: 0.65;
+  text-shadow:
+      0 0 6px rgba(255,255,255,0.65),
+      0 0 12px rgba(255,255,255,0.55);
+}
+/* ====== BOTTOM-LEFT WATERMARK (Vineet) ====== */
+.watermark-left {
+  position: fixed;
+  bottom: 18px;
+  left: 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  opacity: 0.55;
+  color: var(--text);
+  z-index: 9999;
+  pointer-events: none;
+  text-shadow:
+      0 0 6px rgba(0,0,0,0.45),
+      0 0 14px rgba(0,0,0,0.35);
+}
+
+.light-theme .watermark-left {
+  opacity: 0.65;
+  text-shadow:
+      0 0 6px rgba(255,255,255,0.65),
+      0 0 12px rgba(255,255,255,0.55);
+}
+
+            
+
 </style>
+
+<div class="custom-arrow-btn">↗</div>
+<div class="aura"></div>
+
+<div class="fraud-drone-layer"><div class="fraud-drone">🛸</div></div>
+
+<div class="coin-layer">
+  <div class="coin coin-1">₿</div>
+  <div class="coin coin-2">₿</div>
+  <div class="coin coin-3">₿</div>
+  <div class="coin coin-4">₿</div>
+  <div class="coin coin-5">₿</div>
+</div>
+<div class="watermark-left">Vineet Dungdung</div>
+
+<div class="watermark">Pratishtha Sheetal</div>
+
 """, unsafe_allow_html=True)
 
-# ---------- Hero ----------
+# --------------------------------------------
+# Floating hero
+# --------------------------------------------
 st.markdown("""
-<div class="hero">
-  <div class="pill">⚡ Hybrid ML + Rules</div>
-  <h1>Real-Time Bitcoin Fraud Detection Console</h1>
-  <p>
-    A production-style decision system that combines an <b>XGBoost illicit probability model</b>
-    with a <b>transparent rule engine</b>. Analysts can tune risk appetite live, inspect decisions,
-    and verify new transactions in real time through the backend.
-  </p>
+<div class="hero float-ui">
+  <h1>🧠 Real-Time Bitcoin Fraud Detection Console</h1>
+  <p>Hybrid ML + Rule-Based Decision Engine with Live Tuning</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- Quick start cards ----------
+# --------------------------------------------
+# Cards
+# --------------------------------------------
 st.markdown("""
 <div class="grid">
-  <div class="card">
+  <div class="card float-ui delay1">
     <h3>⚡ Real-Time Verification</h3>
-    <p>
-      Submit a single transaction to the backend. The system computes:
-      <b>ML Probability</b>, <b>Rule Score</b>, and a final hybrid decision.
-    </p>
-    <p class="footer">Open in sidebar → “Real-Time Verification”.</p>
+    <p>Submit a single transaction and compute ML + Rules instantly.</p>
   </div>
-  <div class="card">
+
+  <div class="card float-ui delay2">
     <h3>🎛️ Risk Appetite Tuner</h3>
-    <p>
-      Redefine “suspicious” on the fly. Change rule thresholds and weights,
-      and instantly see how KPIs and detection behavior shift.
-    </p>
-    <p class="footer">Open in sidebar → “Risk Appetite Tuner”.</p>
+    <p>Adjust rule thresholds + ML confidence live.</p>
   </div>
-  <div class="card">
+
+  <div class="card float-ui">
     <h3>🔍 Forensic Inspection</h3>
-    <p>
-      Drill into false positives / false negatives to see which rules fired,
-      and how ML confidence interacted with human logic.
-    </p>
-    <p class="footer">Built into the tuner page.</p>
+    <p>Investigate FP / FN cases and rule contributions.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-colA, colB = st.columns([1.2, 1])
+st.subheader("How decisions are made")
+st.latex(r"""
+\text{Flagged} =
+(\text{XGBoost\_Prob} \ge \tau_{\text{ML}}) \lor
+\left(\sum_i \text{Rule}_i \cdot w_i \ge \tau_{\text{Rules}}\right)
+""")
 
-with colA:
-    st.subheader("How decisions are made")
-    st.latex(r"""
-    \text{Flagged} =
-    (\text{XGBoost\_Prob} \ge \tau_{\text{ML}})
-    \ \lor \
-    \left(\sum_i \text{Rule}_i \cdot w_i \ge \tau_{\text{Rules}}\right)
-    """)
 
-with colB:
-    st.subheader("Backend status")
-    st.write("Start backend first:")
-    st.code("uvicorn backend.app:app --reload", language="bash")
-    st.write("Then run Streamlit:")
-    st.code("streamlit run streamlit_app/Home.py", language="bash")
-
-st.info("Use the left sidebar to navigate between modules.")

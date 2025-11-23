@@ -1,158 +1,229 @@
 import streamlit as st
 import requests
 import pandas as pd
+from components.theme_toggle import render_theme_toggle, render_animated_background
 
 st.set_page_config(page_title="Real-Time Verification", layout="wide", page_icon="⚡")
 
-if 'theme' not in st.session_state:
-    st.session_state.theme = 'dark'
+# -------------------------------------------------------------------
+# Global premium layers
+# -------------------------------------------------------------------
+render_theme_toggle()
+render_animated_background()
 
-theme = st.session_state.theme
-
-if theme == 'dark':
-    bg, card_bg, text, accent, accent2 = "#0a0e27", "rgba(255,255,255,0.05)", "#ffffff", "#00d4ff", "#ff006e"
-else:
-    bg, card_bg, text, accent, accent2 = "#f0f4f8", "rgba(255,255,255,0.9)", "#1a1a2e", "#0066ff", "#ff006e"
-
-st.markdown(f"""
+# -------------------------------------------------------------------
+# PREMIUM CSS + TRUE ANIMATED BACKGROUND LAYERS
+# -------------------------------------------------------------------
+st.markdown("""
 <style>
-@keyframes wave {{ 0%, 100% {{ transform: translateX(0); }} 50% {{ transform: translateX(-25%); }} }}
-@keyframes float {{ 0%, 100% {{ transform: translateY(0); }} 50% {{ transform: translateY(-20px); }} }}
-@keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(20px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+/* ====== DESIGN TOKENS (MATCH HOME) ====== */
+:root {
+  --bg: #0B0E14;
+  --panel: rgba(255,255,255,0.06);
+  --panel-strong: rgba(255,255,255,0.10);
+  --text: #E6E9EF;
+  --muted: #AAB0BC;
+  --accent: #7C5CFF;
+  --accent-2: #00E5FF;
+  --good: #2ECC71;
+  --warn: #F1C40F;
+  --bad:  #FF6B6B;
+  --radius: 18px;
 
-/* Hide default Streamlit elements */
-#MainMenu {{visibility: hidden;}}
-footer {{visibility: hidden;}}
-header {{visibility: hidden;}}
-.stDeployButton {{display: none;}}
+  --glow-1: rgba(124,92,255,0.55);
+  --glow-2: rgba(0,229,255,0.45);
+}
 
-.stApp {{ background: {bg} !important; }}
-.stApp::before {{
-    content: ''; position: fixed; top: 0; left: 0; width: 200%; height: 200%;
-    background: radial-gradient(circle at 20% 50%, {accent}20 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, {accent2}20 0%, transparent 50%);
-    animation: wave 20s ease-in-out infinite; z-index: 0; pointer-events: none;
-}}
+/* LIGHT THEME OVERRIDES */
+.light-theme {
+  --bg: #F5F7FA;
+  --text: #131722;
+  --panel: rgba(0,0,0,0.06);
+  --panel-strong: rgba(0,0,0,0.10);
+  --muted: #4A5568;
+  --accent: #6C4BFF;
+  --accent-2: #00A7D6;
 
-.particle {{ position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }}
-.p1 {{ width: 300px; height: 300px; background: radial-gradient(circle, {accent}15 0%, transparent 70%);
-       top: 10%; left: 10%; animation: float 8s ease-in-out infinite; }}
+  --glow-1: rgba(108,75,255,0.45);
+  --glow-2: rgba(0,167,214,0.40);
+}
 
-.main .block-container {{ position: relative; z-index: 10 !important; }}
+/* Global App Styling */
+html, body, [class*="css"] {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+.block-container { padding-top: 1.2rem; }
 
-.card {{
-    background: {card_bg}; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; animation: fadeIn 0.8s ease-out;
-    transition: all 0.3s ease;
-}}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stDeployButton {display: none;}
 
-.card:hover {{ transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); border-color: {accent}; }}
+.stApp { background: transparent !important; }
 
-.card-title {{ font-size: 1.5rem; font-weight: 700; color: {text}; margin-bottom: 1.5rem; }}
+.main, .block-container, [data-testid="stSidebar"] {
+  position: relative;
+  z-index: 2;
+}
 
-.result-card {{
-    background: {card_bg}; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px; padding: 2rem; text-align: center; transition: all 0.3s ease;
-}}
+/* ===== BACKGROUND LAYERS ===== */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
 
-.result-card:hover {{ transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }}
+.orb {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  animation: orbFloat 18s ease-in-out infinite;
+}
+.orb1 {
+  background: radial-gradient(circle, var(--glow-1), transparent 60%);
+  top: -20vmax;
+  left: -10vmax;
+  animation-duration: 22s;
+}
+.orb2 {
+  background: radial-gradient(circle, var(--glow-2), transparent 60%);
+  top: -10vmax;
+  right: -15vmax;
+  animation-duration: 19s;
+}
+.orb3 {
+  background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%);
+  bottom: -25vmax;
+  left: 10vmax;
+  animation-duration: 26s;
+}
 
-.result-icon {{ font-size: 3rem; margin-bottom: 1rem; }}
-.result-value {{ font-size: 2.5rem; font-weight: 800; color: {text}; margin-bottom: 0.5rem; }}
-.result-label {{ font-size: 0.875rem; color: {text}; opacity: 0.7; text-transform: uppercase; }}
+@keyframes orbFloat {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(4vmax, -3vmax) scale(1.08); }
+  100% { transform: translate(0, 0) scale(1); }
+}
 
-.alert {{
-    background: {card_bg}; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px; padding: 2rem; margin: 2rem 0; display: flex; align-items: center; gap: 1.5rem;
-}}
+/* Neon Moving Grid */
+.grid-overlay {
+  position: absolute;
+  inset: -50%;
+  background:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.25;
+  animation: gridDrift 30s linear infinite;
+  mask-image: radial-gradient(circle at 50% 10%, black 0%, transparent 70%);
+}
 
-.alert-success {{ border-left: 4px solid #00d25b; }}
-.alert-error {{ border-left: 4px solid {accent2}; }}
-.alert-icon {{ font-size: 3rem; }}
-.alert-title {{ font-size: 1.25rem; font-weight: 700; color: {text}; margin-bottom: 0.5rem; }}
-.alert-message {{ color: {text}; opacity: 0.9; }}
+@keyframes gridDrift {
+  0%   { transform: translateY(0) translateX(0); }
+  100% { transform: translateY(8%) translateX(-6%); }
+}
 
-.stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{ color: {text} !important; }}
-[data-testid="stSidebar"] {{ background: {card_bg} !important; backdrop-filter: blur(20px); }}
+/* ===== PAGE TITLE ===== */
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.page-sub {
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin-bottom: 1.6rem;
+}
 
-.stButton > button {{
-    background: linear-gradient(135deg, {accent}, {accent2}) !important; color: white !important;
-    border: none !important; border-radius: 50px !important; padding: 1rem 3rem !important;
-    font-weight: 600 !important; font-size: 1.125rem !important;
-}}
+/* ===== CARDS ===== */
+.card {
+  position: relative;
+  background: rgba(0,0,0,0.48);
+  backdrop-filter: blur(9px);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: 0.25s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.62);
+}
 
-.stButton > button:hover {{ transform: translateY(-3px); box-shadow: 0 8px 25px {accent}60; }}
+/* ===== RESULT CARDS ===== */
+.result-card {
+  background: rgba(0,0,0,0.55);
+  padding: 1.4rem;
+  border-radius: 16px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
 
-.stTextInput label, .stNumberInput label, .stSelectbox label {{ color: {text} !important; }}
-.stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > select {{
-    background: rgba(0,0,0,0.2) !important; border: 1px solid rgba(255,255,255,0.1) !important;
-    color: {text} !important; border-radius: 12px !important;
-}}
+.result-icon { font-size: 2.4rem; }
+.result-value { font-size: 2rem; font-weight: 800; }
 
-.dataframe {{ background: {card_bg} !important; backdrop-filter: blur(20px); border-radius: 12px !important; }}
+/* ===== ALERTS ===== */
+.alert {
+  background: rgba(0,0,0,0.54);
+  border-radius: 16px;
+  padding: 1.2rem;
+  display: flex;
+  gap: 1.1rem;
+  border-left: 4px solid var(--accent);
+}
+.alert-error { border-left-color: var(--bad); }
+.alert-success { border-left-color: var(--good); }
 
-/* Sidebar styling */
-[data-testid="stSidebar"] {{
-    background: {card_bg} !important;
-    backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(255,255,255,0.1);
-}}
-
-[data-testid="stSidebar"] * {{
-    color: {text} !important;
-}}
-
-[data-testid="stSidebar"] label {{
-    color: {text} !important;
-}}
-
-[data-testid="stSidebar"] .stTextInput > div > div > input {{
-    background: rgba(0,0,0,0.3) !important;
-    color: {text} !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-}}
-
-/* Sidebar buttons */
-[data-testid="stSidebar"] .stButton > button {{
-    background: {card_bg} !important;
-    color: {text} !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 12px !important;
-    padding: 0.5rem 1rem !important;
-    transition: all 0.3s ease !important;
-}}
-
-[data-testid="stSidebar"] .stButton > button:hover {{
-    border-color: {accent} !important;
-    transform: translateY(-2px) !important;
-}}
-
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stButton > button[data-baseweb="button"][kind="primary"] {{
-    background: linear-gradient(135deg, {accent}, {accent2}) !important;
-    color: white !important;
-    border: none !important;
-    box-shadow: 0 4px 12px {accent}40 !important;
-}}
+/* ===== INPUTS ===== */
+.stTextInput input,
+.stNumberInput input {
+  background: rgba(255,255,255,0.05) !important;
+  color: var(--text) !important;
+  border-radius: 12px !important;
+}
 </style>
 
-<div class="particle p1"></div>
+<div class="bg-layer">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="grid-overlay"></div>
+</div>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<h1 style="color: {text}; font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">⚡ Real-Time Transaction Verification</h1>', unsafe_allow_html=True)
-st.markdown(f'<p style="color: {text}; opacity: 0.9; font-size: 1.125rem; margin-bottom: 2rem;">Submit transactions to the backend API and get instant fraud detection results</p>', unsafe_allow_html=True)
+# -------------------------------------------------------------------
+# Header
+# -------------------------------------------------------------------
+st.markdown('<div class="page-title">⚡ Real-Time Transaction Verification</div>', unsafe_allow_html=True)
+st.markdown('<div class="page-sub">Submit transactions to the backend and receive instant hybrid fraud decisions.</div>', unsafe_allow_html=True)
 
-API_URL = st.sidebar.text_input("🔗 Backend URL", value="http://localhost:8000/transactions")
+# -------------------------------------------------------------------
+# BACKEND URL (REMOVED FROM SIDEBAR)
+# -------------------------------------------------------------------
+API_URL = "http://localhost:8000/transactions"   # ← FIXED backend URL
 
+# -------------------------------------------------------------------
+# Layout
+# -------------------------------------------------------------------
 col_left, col_right = st.columns([1.1, 1])
 
 with col_left:
-    st.markdown(f'<div class="card"><h3 class="card-title">📝 Transaction Input</h3></div>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><div class="card-title">📝 Transaction Input</div>', unsafe_allow_html=True)
+
     user_id = st.number_input("👤 User ID", min_value=1, value=1)
     tx_id = st.text_input("🔖 Transaction ID", value="TX_001")
     time_step = st.number_input("⏱️ Time Step", min_value=0, value=10)
+
     st.markdown("---")
-    st.markdown(f"<p style='color: {text}; font-weight: 600;'>Key Elliptic Features</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-weight:700;'>Key Elliptic Features</p>", unsafe_allow_html=True)
+
     feat_3 = st.number_input("💰 feat_3 — Amount", value=1000.0)
     feat_4 = st.number_input("💸 feat_4 — Fee", value=0.1)
     feat_100 = st.number_input("🔗 feat_100 — Neighbor Agg", value=0.5)
@@ -160,46 +231,58 @@ with col_left:
     feat_15 = st.number_input("📊 feat_15", value=1.0)
     feat_20 = st.number_input("📈 feat_20", value=1.0)
 
+    st.markdown("</div>", unsafe_allow_html=True)
+
 with col_right:
-    st.markdown(f'<div class="card"><h3 class="card-title">🎯 Quick Presets</h3></div>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><div class="card-title">🎯 Quick Presets</div>', unsafe_allow_html=True)
+
     preset = st.selectbox("📋 Select Preset", ["Custom", "Likely Licit", "Likely Illicit (High-Value + Zero Fee)"])
-    
+
     if preset == "Likely Licit":
         feat_3, feat_4, time_step, feat_100, feat_10, feat_15, feat_20 = 1200.0, 0.2, 9, 0.2, 3.0, 1.0, 1.0
         st.success("✓ Preset loaded")
     elif preset == "Likely Illicit (High-Value + Zero Fee)":
         feat_3, feat_4, time_step, feat_100, feat_10, feat_15, feat_20 = 80000.0, 0.0, 2, 1.4, 15.0, 4.0, 1.0
         st.warning("⚠ Preset loaded")
-    
+
     st.markdown("---")
-    st.markdown(f"<p style='color: {text}; font-weight: 600;'>Payload Preview</p>", unsafe_allow_html=True)
-    features = {"feat_3": feat_3, "feat_4": feat_4, "feat_100": feat_100, "feat_10": feat_10, "feat_15": feat_15, "feat_20": feat_20}
+    st.markdown("<p style='font-weight:700;'>Payload Preview</p>", unsafe_allow_html=True)
+
+    features = {
+        "feat_3": feat_3, "feat_4": feat_4, "feat_100": feat_100,
+        "feat_10": feat_10, "feat_15": feat_15, "feat_20": feat_20
+    }
     st.json(features)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 payload = {"user_id": user_id, "tx_id": tx_id, "time_step": int(time_step), "features": features}
 
 verify = st.button("🚀 Verify Transaction", use_container_width=True, type="primary")
 
+# -------------------------------------------------------------------
+# Verification
+# -------------------------------------------------------------------
 if verify:
-    with st.spinner("🔄 Analyzing..."):
+    with st.spinner("🔄 Analyzing transaction..."):
         try:
             res = requests.post(API_URL, json=payload, timeout=10)
             if res.status_code != 200:
                 st.error(f"❌ Backend error: {res.status_code}")
                 st.code(res.text)
                 st.stop()
-            
+
             result = res.json()
             ml_prob = result.get("ml_probability", result.get("fraud_probability", 0.0))
             is_fraud = result.get("fraud", False)
             if "fraud" not in result and "status" in result:
                 is_fraud = (result["status"] == "REJECTED")
-            
+
             st.markdown("---")
-            st.markdown(f"<h2 style='color: {text}; font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem;'>📊 Decision Results</h2>", unsafe_allow_html=True)
-            
+            st.markdown("<h2 style='font-size:1.7rem; font-weight:800;'>📊 Decision Results</h2>", unsafe_allow_html=True)
+
             k1, k2, k3 = st.columns(3)
-            
+
             with k1:
                 st.markdown(f"""
                 <div class="result-card">
@@ -208,7 +291,7 @@ if verify:
                     <div class="result-label">ML Probability</div>
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             with k2:
                 st.markdown(f"""
                 <div class="result-card">
@@ -217,7 +300,7 @@ if verify:
                     <div class="result-label">Rule Score</div>
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             with k3:
                 status_icon = "🚨" if is_fraud else "✅"
                 st.markdown(f"""
@@ -227,14 +310,14 @@ if verify:
                     <div class="result-label">Final Status</div>
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             if is_fraud:
                 st.markdown("""
                 <div class="alert alert-error">
                     <div class="alert-icon">🚨</div>
                     <div>
                         <div class="alert-title">FRAUD DETECTED — Block Transaction</div>
-                        <div class="alert-message">This transaction has been flagged as suspicious</div>
+                        <div class="alert-message">This transaction has been flagged as suspicious.</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -244,20 +327,21 @@ if verify:
                     <div class="alert-icon">✅</div>
                     <div>
                         <div class="alert-title">CLEAN TRANSACTION — Allow</div>
-                        <div class="alert-message">This transaction appears legitimate</div>
+                        <div class="alert-message">This transaction appears legitimate.</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             if "fired_rules" in result:
                 st.markdown("---")
-                st.markdown(f"<h2 style='color: {text}; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem;'>🔍 Rule Breakdown</h2>", unsafe_allow_html=True)
+                st.markdown("<h2 style='font-size:1.5rem; font-weight:800;'>🔍 Rule Breakdown</h2>", unsafe_allow_html=True)
+
                 fired_df = pd.DataFrame({
                     "Rule": list(result["fired_rules"].keys()),
                     "Status": ["🔴 Fired" if v == 1 else "⚪ Not Fired" for v in result["fired_rules"].values()]
                 })
                 st.dataframe(fired_df, use_container_width=True, hide_index=True)
-            
+
         except requests.exceptions.ConnectionError:
             st.error("❌ Backend not reachable")
             st.code("uvicorn backend.app:app --reload", language="bash")

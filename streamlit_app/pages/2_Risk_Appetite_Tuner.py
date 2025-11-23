@@ -5,187 +5,273 @@ import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix, f1_score, recall_score, precision_score
 
+from components.theme_toggle import render_theme_toggle, render_animated_background
+
 st.set_page_config(
     page_title="Risk Appetite Tuner | Fraud Detection",
     layout="wide",
     page_icon="🎛️"
 )
 
-# Initialize theme
-if 'theme' not in st.session_state:
-    st.session_state.theme = 'dark'
+# -------------------------------------------------------------------
+# Premium global layers (same as Home / Verification)
+# -------------------------------------------------------------------
+render_theme_toggle()
+render_animated_background()
 
+# keep session_state theme for Plotly (CSS theme is body-class based)
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
 theme = st.session_state.theme
+plot_template = "plotly_dark" if theme == "dark" else "plotly_white"
+plot_bg = "rgba(26,29,41,0.55)" if theme == "dark" else "rgba(255,255,255,0.75)"
 
-if theme == 'dark':
-    bg, card_bg, text, accent, accent2 = "#0a0e27", "rgba(255,255,255,0.05)", "#ffffff", "#00d4ff", "#ff006e"
-    plot_bg = "rgba(26, 29, 41, 0.5)"
-else:
-    bg, card_bg, text, accent, accent2 = "#f0f4f8", "rgba(255,255,255,0.9)", "#1a1a2e", "#0066ff", "#ff006e"
-    plot_bg = "rgba(255, 255, 255, 0.5)"
-
-# Themed CSS
-st.markdown(f"""
+st.markdown("""
 <style>
-@keyframes wave {{ 0%, 100% {{ transform: translateX(0); }} 50% {{ transform: translateX(-25%); }} }}
-@keyframes float {{ 0%, 100% {{ transform: translateY(0); }} 50% {{ transform: translateY(-20px); }} }}
 
-/* Hide default Streamlit elements */
-#MainMenu {{visibility: hidden;}}
-footer {{visibility: hidden;}}
-header {{visibility: hidden;}}
-.stDeployButton {{display: none;}}
+/* ====== DESIGN TOKENS (MATCH HOME) ====== */
+:root {
+  --bg: #0B0E14;
+  --panel: rgba(255,255,255,0.06);
+  --panel-strong: rgba(255,255,255,0.10);
+  --text: #E6E9EF;
+  --muted: #AAB0BC;
+  --accent: #7C5CFF;
+  --accent-2: #00E5FF;
+  --good: #2ECC71;
+  --warn: #F1C40F;
+  --bad:  #FF6B6B;
+  --radius: 18px;
 
-.stApp {{ background: {bg} !important; }}
-.stApp::before {{
-    content: ''; position: fixed; top: 0; left: 0; width: 200%; height: 200%;
-    background: radial-gradient(circle at 20% 50%, {accent}20 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, {accent2}20 0%, transparent 50%);
-    animation: wave 20s ease-in-out infinite; z-index: 0; pointer-events: none;
-}}
+  --glow-1: rgba(124,92,255,0.55);
+  --glow-2: rgba(0,229,255,0.45);
+}
 
-.particle {{ position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }}
-.p1 {{ width: 300px; height: 300px; background: radial-gradient(circle, {accent}15 0%, transparent 70%);
-       top: 10%; left: 10%; animation: float 8s ease-in-out infinite; }}
+/* LIGHT THEME OVERRIDES */
+.light-theme {
+  --bg: #F5F7FA;
+  --text: #131722;
+  --panel: rgba(0,0,0,0.06);
+  --panel-strong: rgba(0,0,0,0.10);
+  --muted: #4A5568;
+  --accent: #6C4BFF;
+  --accent-2: #00A7D6;
 
-.main .block-container {{ position: relative; z-index: 10 !important; padding: 2rem !important; }}
+  --glow-1: rgba(108,75,255,0.45);
+  --glow-2: rgba(0,167,214,0.40);
+}
 
-.page-title {{
-  font-size: 2rem;
-  font-weight: 700;
-  color: {text};
-  margin-bottom: 0.5rem;
-}}
+/* Apply vars */
+html, body, [class*="css"] {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
 
-.page-subtitle {{
-  font-size: 1rem;
-  color: {text};
-  opacity: 0.8;
-  margin-bottom: 2rem;
-}}
+.block-container { padding-top: 1.0rem; }
 
-.kpi-card {{
-  background: {card_bg};
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  transition: all 0.3s ease;
-}}
+/* Hide Streamlit chrome */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+.stDeployButton {display: none;}
 
-.kpi-card:hover {{
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px {accent}40;
-  border-color: {accent};
-}}
+/* ====== ANIMATED AURA BACKGROUND ====== */
+.aura {
+  position: fixed;
+  inset: -20%;
+  z-index: -5;
+  background:
+    radial-gradient(800px circle at 10% 5%, var(--glow-1), transparent 55%),
+    radial-gradient(700px circle at 90% 10%, var(--glow-2), transparent 55%),
+    radial-gradient(900px circle at 50% 100%, rgba(255,255,255,0.06), transparent 60%);
+  animation: auraShift 14s ease-in-out infinite;
+  filter: blur(45px);
+  opacity: 0.9;
+  pointer-events: none;
+}
 
-.kpi-icon {{
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-}}
+@keyframes auraShift {
+  0%   { transform: translateY(0px) translateX(0px) scale(1); }
+  50%  { transform: translateY(-35px) translateX(25px) scale(1.06); }
+  100% { transform: translateY(0px) translateX(0px) scale(1); }
+}
 
-.kpi-value {{
-  font-size: 2rem;
-  font-weight: 700;
-  color: {text};
-  margin-bottom: 0.5rem;
-}}
+/* ====== NEON GRID OVERLAY ====== */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  background:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at 50% 20%, black 0%, transparent 70%);
+  opacity: 0.35;
+  pointer-events: none;
+}
 
-.kpi-label {{
-  font-size: 0.75rem;
-  color: {text};
-  opacity: 0.7;
-  text-transform: uppercase;
-}}
+/* ====== PAGE HEADER ====== */
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: .25rem;
+}
+.page-subtitle {
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin-bottom: 1.2rem;
+}
 
-.card {{
-  background: {card_bg};
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}}
+/* ====== PREMIUM CARDS ====== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-.card-title {{
+.card {
+  position: relative;
+  background: rgba(0,0,0,0.50);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow:
+    0 10px 32px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(255,255,255,0.03);
+  animation: fadeUp 0.7s ease-out;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  overflow: hidden;
+}
+
+.light-theme .card { background: rgba(255,255,255,0.82); }
+
+.card:before {
+  content: "";
+  position: absolute;
+  inset: -120% -60%;
+  background: conic-gradient(from 140deg, transparent, var(--glow-2), transparent 30%);
+  opacity: 0.25;
+  transition: opacity 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(124,92,255,0.55);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.62),
+    0 0 0 1px rgba(124,92,255,0.18),
+    0 0 30px var(--glow-1);
+}
+
+.card:hover:before { opacity: 0.45; }
+
+.card-title {
   font-size: 1.25rem;
+  font-weight: 750;
+  margin-bottom: .8rem;
+}
+
+/* ====== KPI CARDS ====== */
+.kpi-card {
+  position: relative;
+  background: rgba(0,0,0,0.58);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.35rem 1.1rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+  text-align: center;
+  transition: all .22s ease;
+  animation: fadeUp .6s ease-out;
+}
+.light-theme .kpi-card { background: rgba(255,255,255,0.9); }
+
+.kpi-card:hover {
+  transform: translateY(-7px) scale(1.02);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.55), 0 0 25px var(--glow-2);
+}
+
+.kpi-icon  { font-size: 2rem; margin-bottom: .5rem; }
+.kpi-value { font-size: 1.9rem; font-weight: 800; margin-bottom: .15rem; }
+.kpi-label { font-size: .78rem; letter-spacing:.6px; color: var(--muted); text-transform: uppercase; }
+
+/* ====== INPUTS / SLIDERS ====== */
+.stTextInput label, .stNumberInput label, .stSelectbox label, .stSlider label {
+  color: var(--text) !important;
   font-weight: 600;
-  color: {text};
-  margin-bottom: 1rem;
-}}
+}
 
-.stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{ color: {text} !important; }}
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > select {
+  background: rgba(0,0,0,0.35) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-radius: 12px !important;
+}
+.light-theme .stTextInput > div > div > input,
+.light-theme .stNumberInput > div > div > input,
+.light-theme .stSelectbox > div > div > select {
+  background: rgba(255,255,255,0.9) !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+}
 
-/* Sidebar styling */
-[data-testid="stSidebar"] {{
-    background: {card_bg} !important;
-    backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(255,255,255,0.1);
-}}
-
-[data-testid="stSidebar"] * {{
-    color: {text} !important;
-}}
-
-[data-testid="stSidebar"] label {{
-    color: {text} !important;
-}}
-
-[data-testid="stSidebar"] .stMarkdown {{
-    color: {text} !important;
-}}
-
-/* Slider styling */
-.stSlider label {{
-    color: {text} !important;
-}}
-
-/* Sidebar buttons */
-[data-testid="stSidebar"] .stButton > button {{
-    background: {card_bg} !important;
-    color: {text} !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 12px !important;
-    padding: 0.5rem 1rem !important;
-    transition: all 0.3s ease !important;
-}}
-
-[data-testid="stSidebar"] .stButton > button:hover {{
-    border-color: {accent} !important;
-    transform: translateY(-2px) !important;
-}}
-
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stButton > button[data-baseweb="button"][kind="primary"] {{
-    background: linear-gradient(135deg, {accent}, {accent2}) !important;
-    color: white !important;
-    border: none !important;
-    box-shadow: 0 4px 12px {accent}40 !important;
-}}
-
-.stButton > button {{
-  background: linear-gradient(135deg, {accent}, {accent2}) !important;
+/* ====== BUTTONS ====== */
+.stButton > button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
   color: white !important;
   border: none !important;
-  border-radius: 50px !important;
-  padding: 0.75rem 2rem !important;
-  font-weight: 600 !important;
-}}
+  border-radius: 999px !important;
+  padding: .7rem 1.4rem !important;
+  font-weight: 700 !important;
+  transition: all .22s ease !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 18px var(--glow-1);
+}
+.stButton > button:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.6), 0 0 26px var(--glow-2);
+}
+
+/* ====== SIDEBAR ====== */
+[data-testid="stSidebar"] {
+  background: rgba(0,0,0,0.62) !important;
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255,255,255,0.12);
+}
+.light-theme [data-testid="stSidebar"] {
+  background: rgba(255,255,255,0.92) !important;
+  border-right: 1px solid rgba(0,0,0,0.12);
+}
+[data-testid="stSidebar"] * { color: var(--text) !important; }
+
+/* dataframe */
+[data-testid="stDataFrame"] {
+  background: var(--panel) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
 </style>
 
-<div class="particle p1"></div>
+<div class="aura"></div>
+<div class="grid-overlay"></div>
 """, unsafe_allow_html=True)
 
-# Page Header
-st.markdown(f"""
-<h1 class="page-title">🎛️ Risk Appetite Tuner</h1>
-<p class="page-subtitle">
-    Dynamically adjust rule thresholds and weights to see real-time impact on detection performance
-</p>
-""", unsafe_allow_html=True)
+# -------------------------------------------------------------------
+# Header
+# -------------------------------------------------------------------
+st.markdown('<div class="page-title">🎛️ Risk Appetite Tuner</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="page-subtitle">'
+    'Dynamically adjust rule thresholds and weights to see real-time impact on detection performance.'
+    '</div>',
+    unsafe_allow_html=True
+)
 
+# -------------------------------------------------------------------
 # Load Data
+# -------------------------------------------------------------------
 @st.cache_data
 def load_data():
     return pd.read_csv("simulation_data.csv")
@@ -196,8 +282,10 @@ except FileNotFoundError:
     st.error("❌ simulation_data.csv not found. Please run hybrid_pipeline.py first.")
     st.stop()
 
+# -------------------------------------------------------------------
 # Sidebar Controls
-st.sidebar.markdown(f"<h2 style='color: {text};'>🎛️ Policy Controls</h2>", unsafe_allow_html=True)
+# -------------------------------------------------------------------
+st.sidebar.markdown("<h2 style='font-weight:800;'>🎛️ Policy Controls</h2>", unsafe_allow_html=True)
 
 with st.sidebar.expander("🎯 Rule Definitions", expanded=True):
     th_high_val = st.slider("R1: High Value (>)", 1000.0, 100000.0, 50000.0, 1000.0)
@@ -219,7 +307,9 @@ with st.sidebar.expander("🎚️ Decision Boundary", expanded=True):
     rule_threshold = st.slider("Alert Threshold", 0, 150, 40)
     ml_threshold = st.slider("ML Threshold", 0.0, 1.0, 0.5, 0.05)
 
-# Calculate Rules
+# -------------------------------------------------------------------
+# REAL-TIME RULE ENGINE (unchanged)
+# -------------------------------------------------------------------
 df['R1_Fired'] = np.where(df['feat_3'] > th_high_val, 1, 0)
 df['R2_Fired'] = np.where(df['feat_4'] <= th_zero_fee, 1, 0)
 df['R3_Fired'] = np.where(df['time_step'] <= th_early_step, 1, 0)
@@ -238,16 +328,21 @@ df['Final_Prediction'] = np.where(
     (df['Hybrid_Confidence'] >= ml_threshold) | (df['Dynamic_Rule_Score'] >= rule_threshold), 1, 0
 )
 
-# Calculate Metrics
+# -------------------------------------------------------------------
+# Metrics
+# -------------------------------------------------------------------
 y_true = df['True_Label']
 y_pred = df['Final_Prediction']
 cm = confusion_matrix(y_true, y_pred)
 tn, fp, fn, tp = cm.ravel()
 f1 = f1_score(y_true, y_pred, zero_division=0)
 recall = recall_score(y_true, y_pred, zero_division=0)
+precision = precision_score(y_true, y_pred, zero_division=0)
 
+# -------------------------------------------------------------------
 # KPI Dashboard
-st.markdown(f"<h2 style='color: {text};'>📊 Live Performance Metrics</h2>", unsafe_allow_html=True)
+# -------------------------------------------------------------------
+st.markdown("<h2 style='font-size:1.5rem; font-weight:800;'>📊 Live Performance Metrics</h2>", unsafe_allow_html=True)
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -255,7 +350,7 @@ with col1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-icon">✅</div>
-        <div class="kpi-value" style="color: #00d25b;">{tp}</div>
+        <div class="kpi-value" style="color: var(--good);">{tp}</div>
         <div class="kpi-label">True Positives</div>
     </div>
     """, unsafe_allow_html=True)
@@ -264,7 +359,7 @@ with col2:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-icon">❌</div>
-        <div class="kpi-value" style="color: {accent2};">{fn}</div>
+        <div class="kpi-value" style="color: var(--bad);">{fn}</div>
         <div class="kpi-label">False Negatives</div>
     </div>
     """, unsafe_allow_html=True)
@@ -273,7 +368,7 @@ with col3:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-icon">⚠️</div>
-        <div class="kpi-value" style="color: #FFAB00;">{fp}</div>
+        <div class="kpi-value" style="color: var(--warn);">{fp}</div>
         <div class="kpi-label">False Positives</div>
     </div>
     """, unsafe_allow_html=True)
@@ -296,38 +391,93 @@ with col5:
     </div>
     """, unsafe_allow_html=True)
 
+# -------------------------------------------------------------------
 # Charts Section
+# -------------------------------------------------------------------
 st.markdown("---")
 c1, c2 = st.columns(2)
 
 with c1:
-    st.markdown(f'<div class="card"><h3 class="card-title">📈 Decision Space Analysis</h3></div>', unsafe_allow_html=True)
-    
+    st.markdown('<div class="card"><div class="card-title">📈 Decision Space Analysis</div></div>', unsafe_allow_html=True)
+
     plot_df = df.sample(n=min(2500, len(df)), random_state=42).copy()
     plot_df['Type'] = plot_df['True_Label'].map({1: 'Illicit', 0: 'Licit'})
-    
-    fig = px.scatter(plot_df, x="Dynamic_Rule_Score", y="Hybrid_Confidence", color="Type",
-                     opacity=0.6, color_discrete_map={'Illicit': accent2, 'Licit': '#00D25B'})
-    
-    fig.update_layout(template="plotly_dark" if theme == 'dark' else "plotly_white", 
-                      paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor=plot_bg,
-                      margin=dict(l=0, r=0, t=20, b=0), height=450,
-                      font=dict(color=text))
-    fig.add_vline(x=rule_threshold, line_dash="dash", line_color=accent2, line_width=2)
-    fig.add_hline(y=ml_threshold, line_dash="dash", line_color=accent2, line_width=2)
-    
+
+    fig = px.scatter(
+        plot_df, x="Dynamic_Rule_Score", y="Hybrid_Confidence", color="Type",
+        opacity=0.65,
+        color_discrete_map={'Illicit': '#FF6B6B', 'Licit': '#2ECC71'}
+    )
+
+    fig.update_layout(
+        template=plot_template,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor=plot_bg,
+        margin=dict(l=0, r=0, t=25, b=0),
+        height=460,
+        font=dict(color="#E6E9EF" if theme == "dark" else "#131722")
+    )
+    fig.add_vline(x=rule_threshold, line_dash="dash", line_color="#00E5FF", line_width=2)
+    fig.add_hline(y=ml_threshold, line_dash="dash", line_color="#00E5FF", line_width=2)
+
     st.plotly_chart(fig, use_container_width=True)
 
 with c2:
-    st.markdown(f'<div class="card"><h3 class="card-title">📊 Confusion Matrix</h3></div>', unsafe_allow_html=True)
-    
-    fig_cm = go.Figure(data=go.Heatmap(z=cm, x=['Pred Licit', 'Pred Illicit'], y=['True Licit', 'True Illicit'],
-                                        text=cm, texttemplate='%{text}', textfont={"size": 20, "color": "white"},
-                                        colorscale=[[0, plot_bg], [1, accent2]], showscale=False))
-    
-    fig_cm.update_layout(template="plotly_dark" if theme == 'dark' else "plotly_white",
-                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor=plot_bg,
-                         margin=dict(l=0, r=0, t=20, b=0), height=450,
-                         font=dict(color=text))
-    
+    st.markdown('<div class="card"><div class="card-title">📊 Confusion Matrix</div></div>', unsafe_allow_html=True)
+
+    # ====== HIGH-CONTRAST CONFUSION MATRIX COLORS ======
+    if theme == "dark":
+        cm_colors = [
+            [0.0, "#101217"],
+            [0.25, "#003644"],
+            [0.5, "#007A99"],
+            [0.75, "#00AEDD"],
+            [1.0, "#00E5FF"]
+        ]
+        cm_text_color = "white"
+        cm_grid = "rgba(255,255,255,0.22)"
+    else:
+        cm_colors = [
+            [0.0, "#E8F1FF"],
+            [0.25, "#C7DFFF"],
+            [0.5, "#5BA9FF"],
+            [0.75, "#1A73FF"],
+            [1.0, "#003E9E"]
+        ]
+        cm_text_color = "#131722"
+        cm_grid = "rgba(0,0,0,0.18)"
+
+    fig_cm = go.Figure(
+        data=go.Heatmap(
+            z=cm,
+            x=['Pred Licit', 'Pred Illicit'],
+            y=['True Licit', 'True Illicit'],
+            colorscale=cm_colors,
+            showscale=False,
+            text=cm,
+            texttemplate='%{text}',
+            textfont={"size": 22, "color": cm_text_color},
+            hoverinfo="skip"
+        )
+    )
+
+    fig_cm.update_layout(
+        template=plot_template,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=0, t=25, b=0),
+        height=460,
+        font=dict(color=cm_text_color)
+    )
+
+    fig_cm.update_xaxes(showgrid=True, gridcolor=cm_grid, zeroline=False)
+    fig_cm.update_yaxes(showgrid=True, gridcolor=cm_grid, zeroline=False)
+
     st.plotly_chart(fig_cm, use_container_width=True)
+
+# Optional small footer
+st.markdown(
+    f"<div style='margin-top:1rem; color:var(--muted);'>Precision: {precision:.2%} • "
+    f"Rule Threshold: {rule_threshold} • ML Threshold: {ml_threshold:.2f}</div>",
+    unsafe_allow_html=True
+)
