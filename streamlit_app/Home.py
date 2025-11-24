@@ -1,6 +1,9 @@
 import streamlit as st
 from components.theme_toggle import render_theme_toggle, render_animated_background
 
+# --------------------------------------------
+# 1. Page Config
+# --------------------------------------------
 st.set_page_config(
     page_title="Hybrid Fraud Detection",
     layout="wide",
@@ -8,26 +11,46 @@ st.set_page_config(
 )
 
 # --------------------------------------------
-# Theme toggle + animated particles
+# 2. Cloud Deployment URL Logic (FIXED)
+# --------------------------------------------
+# Default to localhost for local testing
+default_url = "http://localhost:8000/transactions"
+
+# We wrap this in try-except because checking st.secrets crashes locally if no file exists
+try:
+    if "API_URL" in st.secrets:
+        default_url = st.secrets["API_URL"]
+except Exception:
+    # If secrets.toml is missing (running locally), we just keep the default_url
+    pass
+
+# Store in Session State so other pages (Risk Tuner, Verification) can access it
+if "api_url" not in st.session_state:
+    st.session_state["api_url"] = default_url
+
+# Optional: Show the connected backend in sidebar (read-only)
+with st.sidebar:
+    st.header("🔌 System Config")
+    st.text_input("Backend API", value=st.session_state["api_url"], disabled=True, help="Loaded from secrets")
+
+
+# --------------------------------------------
+# 3. Theme & Background (Imported from components)
 # --------------------------------------------
 render_theme_toggle()
 render_animated_background()
 
+
 # --------------------------------------------
-# PREMIUM GLOBAL CSS (corrected)
+# 4. PREMIUM GLOBAL CSS & ANIMATIONS
 # --------------------------------------------
 st.markdown("""
 <style>
 
-/* -----------------------------
-   PREMIUM FONTS
------------------------------ */
+/* PREMIUM FONTS */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-
-/* -----------------------------
-   DESIGN TOKENS
------------------------------ */
+/* DESIGN TOKENS */
 :root {
   --bg: #0B0E14;
   --panel: rgba(255,255,255,0.06);
@@ -57,16 +80,13 @@ html, body, [class*="css"] {
   font-family: "Inter", system-ui, sans-serif;
 }
 
-
 /* Hide default UI but KEEP sidebar */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 .stDeployButton {display: none;}
 
 
-/* -----------------------------
-   AURA BACKGROUND
------------------------------ */
+/* AURA BACKGROUND */
 .aura {
   position: fixed;
   inset: -25%;
@@ -87,16 +107,13 @@ footer {visibility: hidden;}
 }
 
 
-/* -----------------------------
-   UFO DRONE
------------------------------ */
+/* UFO DRONE */
 .fraud-drone-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 3;
 }
-
 .fraud-drone {
   position: absolute;
   font-size: 140px;
@@ -105,37 +122,22 @@ footer {visibility: hidden;}
     drop-shadow(0 0 25px var(--accent-2))
     drop-shadow(0 0 45px var(--accent));
 }
-
-/* rotating scanner ring */
 .fraud-drone::before {
   content: "◯";
   position: absolute;
-  top: -80px;
-  left: -30px;
-  font-size: 210px;
-  color: var(--accent-2);
+  top: -80px; left: -30px;
+  font-size: 210px; color: var(--accent-2);
   opacity: 0.4;
   animation: rotateRing 6s linear infinite;
   filter: blur(1px);
 }
-
-/* scanning beam */
 .fraud-drone::after {
   content: "";
   position: absolute;
-  top: 110px;
-  left: 50px;
-  width: 70px;
-  height: 430px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(0,229,255,0.85),
-    rgba(124,92,255,0.7),
-    transparent
-  );
-  opacity: 0.8;
-  filter: blur(3px);
+  top: 110px; left: 50px;
+  width: 70px; height: 430px;
+  background: linear-gradient(180deg, transparent, rgba(0,229,255,0.85), rgba(124,92,255,0.7), transparent);
+  opacity: 0.8; filter: blur(3px);
   mix-blend-mode: screen;
   animation: beamPulse 2.2s ease-in-out infinite;
 }
@@ -154,9 +156,7 @@ footer {visibility: hidden;}
 }
 
 
-/* -----------------------------
-   FLOATING BITCOINS
------------------------------ */
+/* FLOATING BITCOINS */
 .coin-layer {
   position: fixed;
   inset: 0;
@@ -181,9 +181,7 @@ footer {visibility: hidden;}
 .coin-5 { top: 12%; left: 48%; animation-duration: 11s; }
 
 
-/* -----------------------------
-   FLOATING UI MOTION
------------------------------ */
+/* FLOATING UI MOTION */
 @keyframes floatSoft {
   0%,100% { transform: translateY(0px); }
   50%     { transform: translateY(-8px); }
@@ -193,9 +191,7 @@ footer {visibility: hidden;}
 .delay2 { animation-delay: 2.4s; }
 
 
-/* -----------------------------
-   HERO + CARDS
------------------------------ */
+/* HERO + CARDS */
 .hero {
   background: rgba(0,0,0,0.55);
   padding: 2rem;
@@ -238,9 +234,7 @@ footer {visibility: hidden;}
 }
 
 
-/* -----------------------------
-   SIDEBAR GLOW
------------------------------ */
+/* SIDEBAR GLOW */
 [data-testid="stSidebar"] {
   background: rgba(0,0,0,0.45) !important;
   backdrop-filter: blur(14px);
@@ -249,9 +243,7 @@ footer {visibility: hidden;}
 }
 
 
-/* -----------------------------
-   REMOVE KEYB BUTTON — add arrow instead
------------------------------ */
+/* REMOVE KEYB BUTTON — add arrow instead */
 [data-testid="stKeyboardButton"],
 button[title="Keyboard shortcuts"],
 span[title="Keyboard shortcuts"],
@@ -296,13 +288,6 @@ kbd {
       0 0 14px rgba(0,0,0,0.35);   /* makes it readable on glow */
 }
 
-/* Light mode tweak */
-.light-theme .watermark {
-  opacity: 0.65;
-  text-shadow:
-      0 0 6px rgba(255,255,255,0.65),
-      0 0 12px rgba(255,255,255,0.55);
-}
 /* ====== BOTTOM-LEFT WATERMARK (Vineet) ====== */
 .watermark-left {
   position: fixed;
@@ -318,15 +303,6 @@ kbd {
       0 0 6px rgba(0,0,0,0.45),
       0 0 14px rgba(0,0,0,0.35);
 }
-
-.light-theme .watermark-left {
-  opacity: 0.65;
-  text-shadow:
-      0 0 6px rgba(255,255,255,0.65),
-      0 0 12px rgba(255,255,255,0.55);
-}
-
-            
 
 </style>
 
@@ -353,7 +329,7 @@ kbd {
 # --------------------------------------------
 st.markdown("""
 <div class="hero float-ui">
-  <h1>🧠 Real-Time Bitcoin Fraud Detection Console</h1>
+  <h1>🧠 CipherSentinel Crypto Behavior Monitoring Suite</h1>
   <p>Hybrid ML + Rule-Based Decision Engine with Live Tuning</p>
 </div>
 """, unsafe_allow_html=True)
@@ -388,5 +364,3 @@ st.latex(r"""
 (\text{XGBoost\_Prob} \ge \tau_{\text{ML}}) \lor
 \left(\sum_i \text{Rule}_i \cdot w_i \ge \tau_{\text{Rules}}\right)
 """)
-
-
