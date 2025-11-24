@@ -150,9 +150,10 @@ payload = {
 
 st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🔍 ANALYZE TRANSACTION", use_container_width=True):
-    with st.spinner("Querying Hybrid Model..."):
+    with st.spinner("Querying Hybrid Model (Waking up server... this may take 45s)..."):
         try:
-            res = requests.post(API_URL, json=payload, timeout=10)
+            # --- CRITICAL UPDATE: Increased timeout to 60 seconds ---
+            res = requests.post(API_URL, json=payload, timeout=60)
             
             if res.status_code != 200:
                 st.error(f"Backend Error: {res.status_code}")
@@ -205,6 +206,9 @@ if st.button("🔍 ANALYZE TRANSACTION", use_container_width=True):
 
         except requests.exceptions.ConnectionError:
             st.error("❌ Backend not reachable. Is the Render/FastAPI server running?")
+        except requests.exceptions.ReadTimeout:
+            # Handle the timeout specifically
+            st.error("⏳ Timeout Error: The server is taking too long (Cold Start). Please click 'Analyze' one more time!")
         except Exception as e:
             st.error("❌ Error occurred")
             st.exception(e)
