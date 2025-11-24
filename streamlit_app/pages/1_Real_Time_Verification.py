@@ -12,7 +12,19 @@ render_theme_toggle()
 render_animated_background()
 
 # -------------------------------------------------------------------
-# PREMIUM CSS + TRUE ANIMATED BACKGROUND LAYERS
+# CLOUD URL LOGIC (Synced with Home.py)
+# -------------------------------------------------------------------
+# Grab URL from Session State (set by Home.py) or fallback to localhost
+default_url = st.session_state.get("api_url", "http://localhost:8000/transactions")
+
+API_URL = st.sidebar.text_input(
+    "Backend URL",
+    value=default_url,
+    help="The endpoint where transaction data is sent."
+)
+
+# -------------------------------------------------------------------
+# PREMIUM CSS
 # -------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -37,283 +49,132 @@ st.markdown("""
 /* LIGHT THEME OVERRIDES */
 .light-theme {
   --bg: #F5F7FA;
-  --text: #131722;
+  --text: #101525;
   --panel: rgba(0,0,0,0.06);
   --panel-strong: rgba(0,0,0,0.10);
   --muted: #4A5568;
   --accent: #6C4BFF;
   --accent-2: #00A7D6;
-
   --glow-1: rgba(108,75,255,0.45);
   --glow-2: rgba(0,167,214,0.40);
 }
 
-/* Global App Styling */
-html, body, [class*="css"] {
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-}
-.block-container { padding-top: 1.2rem; }
-
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-.stDeployButton {display: none;}
-
-.stApp { background: transparent !important; }
-
-.main, .block-container, [data-testid="stSidebar"] {
-  position: relative;
-  z-index: 2;
-}
-
-/* ===== BACKGROUND LAYERS ===== */
-.bg-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.orb {
-  position: absolute;
-  width: 70vmax;
-  height: 70vmax;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  animation: orbFloat 18s ease-in-out infinite;
-}
-.orb1 {
-  background: radial-gradient(circle, var(--glow-1), transparent 60%);
-  top: -20vmax;
-  left: -10vmax;
-  animation-duration: 22s;
-}
-.orb2 {
-  background: radial-gradient(circle, var(--glow-2), transparent 60%);
-  top: -10vmax;
-  right: -15vmax;
-  animation-duration: 19s;
-}
-.orb3 {
-  background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%);
-  bottom: -25vmax;
-  left: 10vmax;
-  animation-duration: 26s;
-}
-
-@keyframes orbFloat {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(4vmax, -3vmax) scale(1.08); }
-  100% { transform: translate(0, 0) scale(1); }
-}
-
-/* Neon Moving Grid */
-.grid-overlay {
-  position: absolute;
-  inset: -50%;
-  background:
-    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 64px 64px;
-  opacity: 0.25;
-  animation: gridDrift 30s linear infinite;
-  mask-image: radial-gradient(circle at 50% 10%, black 0%, transparent 70%);
-}
-
-@keyframes gridDrift {
-  0%   { transform: translateY(0) translateX(0); }
-  100% { transform: translateY(8%) translateX(-6%); }
-}
-
-/* ===== PAGE TITLE ===== */
-.page-title {
-  font-size: 2.2rem;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-.page-sub {
-  color: var(--muted);
-  font-size: 1.05rem;
-  margin-bottom: 1.6rem;
-}
-
-/* ===== CARDS ===== */
-.card {
-  position: relative;
-  background: rgba(0,0,0,0.48);
-  backdrop-filter: blur(9px);
+.section-title { font-family:'Orbitron'; font-size: 1.4rem; font-weight: 700; margin: 1.5rem 0 0.8rem 0; color: var(--accent-2); }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-strong);
   border-radius: var(--radius);
-  padding: 1.2rem 1.3rem;
-  border: 1px solid rgba(255,255,255,0.12);
-  transition: 0.25s;
-}
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.62);
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
-/* ===== RESULT CARDS ===== */
-.result-card {
-  background: rgba(0,0,0,0.55);
-  padding: 1.4rem;
-  border-radius: 16px;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.12);
-}
-
-.result-icon { font-size: 2.4rem; }
-.result-value { font-size: 2rem; font-weight: 800; }
-
-/* ===== ALERTS ===== */
+/* ALERTS */
 .alert {
-  background: rgba(0,0,0,0.54);
-  border-radius: 16px;
-  padding: 1.2rem;
-  display: flex;
-  gap: 1.1rem;
-  border-left: 4px solid var(--accent);
+  padding: 1rem; border-radius: 12px; margin-top: 1rem;
+  display: flex; align-items: center; gap: 1rem;
+  animation: fadeIn 0.5s ease;
 }
-.alert-error { border-left-color: var(--bad); }
-.alert-success { border-left-color: var(--good); }
+.alert-danger { background: rgba(255, 107, 107, 0.15); border: 1px solid var(--bad); color: var(--bad); }
+.alert-success { background: rgba(46, 204, 113, 0.15); border: 1px solid var(--good); color: var(--good); }
+.alert-icon { font-size: 1.8rem; }
+.alert-title { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
 
-/* ===== INPUTS ===== */
-.stTextInput input,
-.stNumberInput input {
-  background: rgba(255,255,255,0.05) !important;
-  color: var(--text) !important;
-  border-radius: 12px !important;
-}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
-
-<div class="bg-layer">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-  <div class="grid-overlay"></div>
-</div>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------------------------
-# Header
-# -------------------------------------------------------------------
-st.markdown('<div class="page-title">⚡ Real-Time Transaction Verification</div>', unsafe_allow_html=True)
-st.markdown('<div class="page-sub">Submit transactions to the backend and receive instant hybrid fraud decisions.</div>', unsafe_allow_html=True)
+st.title("⚡ Real-Time Transaction Verification")
 
 # -------------------------------------------------------------------
-# BACKEND URL (REMOVED FROM SIDEBAR)
+# INPUT FORM
 # -------------------------------------------------------------------
-API_URL = "http://localhost:8000/transactions"   # ← FIXED backend URL
+st.markdown("<div class='section-title'>Transaction Parameters</div>", unsafe_allow_html=True)
 
-# -------------------------------------------------------------------
-# Layout
-# -------------------------------------------------------------------
-col_left, col_right = st.columns([1.1, 1])
+col_l, col_r = st.columns([1.2, 1])
 
-with col_left:
-    st.markdown('<div class="card"><div class="card-title">📝 Transaction Input</div>', unsafe_allow_html=True)
-
-    user_id = st.number_input("👤 User ID", min_value=1, value=1)
-    tx_id = st.text_input("🔖 Transaction ID", value="TX_001")
-    time_step = st.number_input("⏱️ Time Step", min_value=0, value=10)
-
+with col_l:
+    st.markdown("<div class='panel'>", unsafe_allow_html=True)
+    st.subheader("📝 Core Details")
+    c1, c2, c3 = st.columns(3)
+    user_id = c1.number_input("User ID", min_value=1, value=101)
+    tx_id = c2.text_input("TX ID", value="TX_LIVE_001")
+    time_step = c3.number_input("Time Step", min_value=1, value=10)
+    
     st.markdown("---")
-    st.markdown("<p style='font-weight:700;'>Key Elliptic Features</p>", unsafe_allow_html=True)
-
-    feat_3 = st.number_input("💰 feat_3 — Amount", value=1000.0)
-    feat_4 = st.number_input("💸 feat_4 — Fee", value=0.1)
-    feat_100 = st.number_input("🔗 feat_100 — Neighbor Agg", value=0.5)
-    feat_10 = st.number_input("⚡ feat_10 — Velocity", value=5.0)
-    feat_15 = st.number_input("📊 feat_15", value=1.0)
-    feat_20 = st.number_input("📈 feat_20", value=1.0)
-
+    st.subheader("📊 Elliptic Features")
+    f1, f2 = st.columns(2)
+    feat_3 = f1.number_input("feat_3 (Value)", value=1000.0)
+    feat_4 = f2.number_input("feat_4 (Fee)", value=0.1)
+    
+    f3, f4 = st.columns(2)
+    feat_10 = f3.number_input("feat_10 (Velocity)", value=5.0)
+    feat_100 = f4.number_input("feat_100 (Agg)", value=0.5)
+    
+    f5, f6 = st.columns(2)
+    feat_15 = f5.number_input("feat_15", value=1.0)
+    feat_20 = f6.number_input("feat_20", value=1.0)
     st.markdown("</div>", unsafe_allow_html=True)
 
-with col_right:
-    st.markdown('<div class="card"><div class="card-title">🎯 Quick Presets</div>', unsafe_allow_html=True)
-
-    preset = st.selectbox("📋 Select Preset", ["Custom", "Likely Licit", "Likely Illicit (High-Value + Zero Fee)"])
-
-    if preset == "Likely Licit":
-        feat_3, feat_4, time_step, feat_100, feat_10, feat_15, feat_20 = 1200.0, 0.2, 9, 0.2, 3.0, 1.0, 1.0
-        st.success("✓ Preset loaded")
-    elif preset == "Likely Illicit (High-Value + Zero Fee)":
-        feat_3, feat_4, time_step, feat_100, feat_10, feat_15, feat_20 = 80000.0, 0.0, 2, 1.4, 15.0, 4.0, 1.0
-        st.warning("⚠ Preset loaded")
-
+with col_r:
+    st.markdown("<div class='panel'>", unsafe_allow_html=True)
+    st.subheader("🚀 Quick Scenarios")
+    preset = st.selectbox("Load Scenario", ["Custom", "Licit (Normal)", "Illicit (High Value + 0 Fee)"])
+    
+    if preset == "Licit (Normal)":
+        feat_3, feat_4, feat_10, feat_100 = 500.0, 0.5, 2.0, 0.1
+        st.info("Loaded 'Normal' values.")
+    elif preset == "Illicit (High Value + 0 Fee)":
+        feat_3, feat_4, feat_10, feat_100 = 60000.0, 0.0, 15.0, 1.2
+        st.warning("Loaded 'Suspicious' values.")
+        
     st.markdown("---")
-    st.markdown("<p style='font-weight:700;'>Payload Preview</p>", unsafe_allow_html=True)
+    st.caption("Payload Preview")
+    st.code({
+        "feat_3": feat_3, "feat_4": feat_4, "feat_10": feat_10, "feat_100": feat_100
+    }, language="json")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    features = {
+# -------------------------------------------------------------------
+# SUBMISSION LOGIC
+# -------------------------------------------------------------------
+payload = {
+    "user_id": user_id,
+    "tx_id": tx_id,
+    "time_step": int(time_step),
+    "features": {
         "feat_3": feat_3, "feat_4": feat_4, "feat_100": feat_100,
         "feat_10": feat_10, "feat_15": feat_15, "feat_20": feat_20
     }
-    st.json(features)
+}
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-payload = {"user_id": user_id, "tx_id": tx_id, "time_step": int(time_step), "features": features}
-
-verify = st.button("🚀 Verify Transaction", use_container_width=True, type="primary")
-
-# -------------------------------------------------------------------
-# Verification
-# -------------------------------------------------------------------
-if verify:
-    with st.spinner("🔄 Analyzing transaction..."):
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("🔍 ANALYZE TRANSACTION", use_container_width=True):
+    with st.spinner("Querying Hybrid Model..."):
         try:
             res = requests.post(API_URL, json=payload, timeout=10)
+            
             if res.status_code != 200:
-                st.error(f"❌ Backend error: {res.status_code}")
-                st.code(res.text)
+                st.error(f"Backend Error: {res.status_code}")
                 st.stop()
-
+                
             result = res.json()
-            ml_prob = result.get("ml_probability", result.get("fraud_probability", 0.0))
-            is_fraud = result.get("fraud", False)
-            if "fraud" not in result and "status" in result:
-                is_fraud = (result["status"] == "REJECTED")
-
-            st.markdown("---")
-            st.markdown("<h2 style='font-size:1.7rem; font-weight:800;'>📊 Decision Results</h2>", unsafe_allow_html=True)
-
-            k1, k2, k3 = st.columns(3)
-
-            with k1:
-                st.markdown(f"""
-                <div class="result-card">
-                    <div class="result-icon">🧠</div>
-                    <div class="result-value">{ml_prob:.1%}</div>
-                    <div class="result-label">ML Probability</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with k2:
-                st.markdown(f"""
-                <div class="result-card">
-                    <div class="result-icon">⚙️</div>
-                    <div class="result-value">{result.get('rule_score', 0.0):.0f}</div>
-                    <div class="result-label">Rule Score</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with k3:
-                status_icon = "🚨" if is_fraud else "✅"
-                st.markdown(f"""
-                <div class="result-card">
-                    <div class="result-icon">{status_icon}</div>
-                    <div class="result-value">{result.get('status', 'UNKNOWN')}</div>
-                    <div class="result-label">Final Status</div>
-                </div>
-                """, unsafe_allow_html=True)
-
+            
+            # Display Decision
+            st.markdown("<div class='section-title'>Hybrid Decision</div>", unsafe_allow_html=True)
+            
+            # Metrics
+            m1, m2, m3 = st.columns(3)
+            m1.metric("ML Probability", f"{result.get('ml_probability', 0):.2%}")
+            m2.metric("Rule Score", f"{result.get('rule_score', 0):.1f}")
+            m3.metric("Status", result.get('status', 'UNKNOWN'))
+            
+            # Final Verdict Banner
+            is_fraud = result.get("fraud", False) or (result.get("status") == "REJECTED")
+            
             if is_fraud:
                 st.markdown("""
-                <div class="alert alert-error">
+                <div class="alert alert-danger">
                     <div class="alert-icon">🚨</div>
                     <div>
                         <div class="alert-title">FRAUD DETECTED — Block Transaction</div>
@@ -343,8 +204,7 @@ if verify:
                 st.dataframe(fired_df, use_container_width=True, hide_index=True)
 
         except requests.exceptions.ConnectionError:
-            st.error("❌ Backend not reachable")
-            st.code("uvicorn backend.app:app --reload", language="bash")
+            st.error("❌ Backend not reachable. Is the Render/FastAPI server running?")
         except Exception as e:
             st.error("❌ Error occurred")
             st.exception(e)
